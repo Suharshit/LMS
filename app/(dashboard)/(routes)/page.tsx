@@ -4,7 +4,6 @@ import { UserButton } from '@clerk/nextjs'
 const page = () => {
   return (
     <div>
-        this is a protected page
         <UserButton/>
     </div>
   )
