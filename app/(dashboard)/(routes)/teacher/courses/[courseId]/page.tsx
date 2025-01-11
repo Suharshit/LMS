@@ -3,18 +3,22 @@ import { db } from '@/lib/db'
 import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { IconBadge } from '@/components/iconBadge'
-import { LayoutDashboard } from 'lucide-react'
+import { CircleDollarSign, LayoutDashboard, ListChecks } from 'lucide-react'
 import { TitleForm } from './_components/titleForm'
 import { DescriptionForm } from './_components/descriptionForm'
 import { ImageForm } from './_components/imageForm'
+import { CategoryForm } from './_components/categoryForm'
+import { PriceForm } from './_components/priceForm'
 
-const CourseIdPage = async({
-    params
-}: {
-    params: { courseId: string }
-}) => {
+interface Params {
+    courseId: string;
+}
+
+const CourseIdPage = async(
+    { params }: { params: Params }
+) => {
     const { userId } = await auth();
-    const { courseId } = await params;
+    const { courseId } = params;
 
     if(!userId) {
         return redirect('/');
@@ -23,6 +27,12 @@ const CourseIdPage = async({
     const course = await db.course.findUnique({
         where: {
             id: courseId
+        }
+    });
+
+    const categories = await db.category.findMany({
+        orderBy: {
+            name: 'asc'
         }
     });
 
@@ -75,6 +85,37 @@ const CourseIdPage = async({
                     initialData={course}
                     courseId={course.id}
                 />
+                <CategoryForm
+                    initialData={course}
+                    courseId={course.id}
+                    options={categories.map((category) => ({
+                        label: category.name,
+                        value: category.id
+                    }))}
+                />
+            </div>
+            <div className='space-y-6'>
+                <div>
+                    <div className='flex items-center gap-x-2'>
+                        <IconBadge icon={ListChecks}/>
+                        <h2 className='text-xl'>Course Chapters</h2>
+                    </div>
+                    <div>
+                        TODO: Chapters
+                    </div>
+                </div>
+                <div>
+                    <div className='flex items-center gap-x-2'>
+                        <IconBadge icon={CircleDollarSign}/>
+                        <h2 className='text-xl'>
+                            Course Pricing
+                        </h2>
+                    </div>
+                    <PriceForm
+                        initialData={course}
+                        courseId={course.id}
+                    />
+                </div>
             </div>
         </div>
     </div>
