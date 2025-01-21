@@ -3,22 +3,19 @@ import { db } from '@/lib/db'
 import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { IconBadge } from '@/components/iconBadge'
-import { CircleDollarSign, LayoutDashboard, ListChecks } from 'lucide-react'
+import { CircleDollarSign, File, LayoutDashboard, ListChecks } from 'lucide-react'
 import { TitleForm } from './_components/titleForm'
 import { DescriptionForm } from './_components/descriptionForm'
 import { ImageForm } from './_components/imageForm'
 import { CategoryForm } from './_components/categoryForm'
 import { PriceForm } from './_components/priceForm'
-
-interface Params {
-    courseId: string;
-}
+import { AttachmentForm } from './_components/attachmentForm'
+import { ChaptersForm } from './_components/chaptersForm'
 
 const CourseIdPage = async(
-    { params }: { params: Params }
+    { params }: { params: { courseId: string }}
 ) => {
     const { userId } = await auth();
-    const { courseId } = params;
 
     if(!userId) {
         return redirect('/');
@@ -26,7 +23,20 @@ const CourseIdPage = async(
 
     const course = await db.course.findUnique({
         where: {
-            id: courseId
+            id: params.courseId,
+            userId
+        },
+        include: {
+            chapters: {
+                orderBy: {
+                    position: 'asc',
+                }
+            },
+            attachments: {
+                orderBy: {
+                    createdAt: 'desc'
+                }
+            }
         }
     });
 
@@ -45,7 +55,8 @@ const CourseIdPage = async(
         course.description,
         course.price,
         course.imageUrl,
-        course.categoryId
+        course.categoryId,
+        course.chapters.some(chapter => chapter.isPublished),
     ];
 
     const totalFeilds = requiredFields.length;
@@ -100,18 +111,31 @@ const CourseIdPage = async(
                         <IconBadge icon={ListChecks}/>
                         <h2 className='text-xl'>Course Chapters</h2>
                     </div>
-                    <div>
-                        TODO: Chapters
-                    </div>
+                    <ChaptersForm
+                        initialData={course}
+                        courseId={course.id}
+                    />
                 </div>
                 <div>
                     <div className='flex items-center gap-x-2'>
                         <IconBadge icon={CircleDollarSign}/>
                         <h2 className='text-xl'>
-                            Course Pricing
+                            Sell your course
                         </h2>
                     </div>
                     <PriceForm
+                        initialData={course}
+                        courseId={course.id}
+                    />
+                </div>
+                <div>
+                    <div className='flex items-center gap-x-2'>
+                        <IconBadge icon={File}/>
+                        <h2 className='text-xl'>
+                            Resources & Attachment&apos;s
+                        </h2>
+                    </div>
+                    <AttachmentForm
                         initialData={course}
                         courseId={course.id}
                     />
